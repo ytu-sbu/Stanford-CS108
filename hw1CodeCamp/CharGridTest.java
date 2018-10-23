@@ -32,8 +32,20 @@ public class CharGridTest extends TestCase {
 		assertEquals(3, cg.charArea('b'));
 		assertEquals(1, cg.charArea('c'));
 	}
-	
-	
-	
-	
+
+
+	public void testCharArea3() {
+		char[][] grid = new char[][]{
+				{'c', 'a', ' ', 'x'},
+				{'d', 'e', ' ', ' '},
+				{'b', ' ', 'b', 'c'},
+				{' ', ' ', 'a', 'e'}
+		};
+
+		CharGrid cg = new CharGrid(grid);
+		assertEquals(16, cg.charArea(' '));
+        assertEquals(0, cg.charArea('z'));
+        assertEquals(9, cg.charArea('e'));
+	}
+
 }

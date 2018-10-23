@@ -4,6 +4,7 @@ import java.util.Set;
 // CS108 HW1 -- String static methods
 
 public class StringCode {
+    private static final int ZERO = 48;
 
 	/**
 	 * Given a string, returns the length of the largest run.
@@ -12,7 +13,32 @@ public class StringCode {
 	 * @return max run length
 	 */
 	public static int maxRun(String str) {
-		return 0; // YOUR CODE HERE
+	    if (str.length() == 0) {
+	        return 0;
+        }
+	    int run = 1;
+	    int maxRun = 1;
+	    char preChar = str.charAt(0);
+	    for (int i = 1; i < str.length(); i++) {
+	        // same character with last position
+	        if (str.charAt(i) == preChar) {
+	            run += 1;
+            }
+            // different character
+            else {
+                // if current run larger than maxRun, update
+                if (run > maxRun) {
+                    maxRun = run;
+                }
+                // reset the flags
+                run = 1;
+                preChar = str.charAt(i);
+            }
+            if (i == str.length() - 1 && run > maxRun) {
+                maxRun = run;
+            }
+        }
+        return maxRun; // YOUR CODE HERE
 	}
 
 	
@@ -24,7 +50,22 @@ public class StringCode {
 	 * @return blown up string
 	 */
 	public static String blowup(String str) {
-		return null; // YOUR CODE HERE
+	    StringBuilder newString = new StringBuilder();
+		for (int i = 0; i < str.length(); i++) {
+		    char aChar = str.charAt(i);
+		    if (aChar < 48 || aChar > 57) {
+		        newString.append(str.charAt(i));
+		        continue;
+            }
+            if (i == str.length() - 1) {
+                break;
+            }
+            int repeat = aChar - ZERO;
+		    for (int j = 0; j < repeat; j++) {
+		        newString.append(str.charAt(i + 1));
+            }
+        }
+		return newString.toString(); // YOUR CODE HERE
 	}
 	
 	/**
@@ -34,6 +75,15 @@ public class StringCode {
 	 * Compute this in linear time using a HashSet. Len will be 1 or more.
 	 */
 	public static boolean stringIntersect(String a, String b, int len) {
+	    Set<String> bag = new HashSet<>();
+	    for (int i = 0; i <= a.length() - len; i++) {
+            bag.add(a.substring(i, i + len));
+        }
+        for (int i = 0; i <= b.length() - len; i++) {
+            if (bag.contains(b.substring(i, i + len))) {
+                return true;
+            }
+        }
 		return false; // YOUR CODE HERE
 	}
 }

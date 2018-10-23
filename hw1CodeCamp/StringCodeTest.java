@@ -12,6 +12,7 @@ public class StringCodeTest extends TestCase {
 		// basic cases
 		assertEquals("xxaaaabb", StringCode.blowup("xx3abb"));
 		assertEquals("xxxZZZZ", StringCode.blowup("2x3Z"));
+        System.out.println("run testBlowup1");
 	}
 	
 	public void testBlowup2() {
@@ -25,6 +26,8 @@ public class StringCodeTest extends TestCase {
 		
 		// try a 0
 		assertEquals("aabb", StringCode.blowup("aa0bb"));
+
+		System.out.println("run testBlowup2");
 	}
 	
 	public void testBlowup3() {
@@ -62,5 +65,24 @@ public class StringCodeTest extends TestCase {
 	}
 
 	// Need test cases for stringIntersect
-	
+    public void testStrIntersect1() {
+	    // assume all strings are of length 1 or more
+	    assertFalse(StringCode.stringIntersect("abc", "defg", 1));
+        assertTrue(StringCode.stringIntersect("abc", "dbefg", 1));
+    }
+
+    public void testStrIntersect2() {
+        assertFalse(StringCode.stringIntersect("junittestcase", "framework", 4));
+        assertTrue(StringCode.stringIntersect("junittestcase", "frametestwork", 4));
+    }
+
+    public void testStrIntersect3() {
+	    assertFalse(StringCode.stringIntersect("junitframework", "testcase", 8));
+        assertTrue(StringCode.stringIntersect("testcase", "testcase", 8));
+    }
+
+    public void testStrIntersect4() {
+        assertFalse(StringCode.stringIntersect("junitframework", "testcase", 18));
+    }
+
 }
