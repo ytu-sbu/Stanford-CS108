@@ -21,10 +21,10 @@ import java.util.*;
 public class Piece {
 	// Starter code specs out a few basic things, leaving
 	// the algorithms to be done.
-	private TPoint[] body;
-	private int[] skirt;
-	private int width;
-	private int height;
+	private final TPoint[] body;
+	private final int[] skirt;
+	private final int width;
+	private final int height;
 	private Piece next; // "next" rotation
 
 	static private Piece[] pieces;	// singleton static array of first rotations
@@ -35,11 +35,32 @@ public class Piece {
 	*/
 	public Piece(TPoint[] points) {
 		// YOUR CODE HERE
+        body = new TPoint[points.length];
+		System.arraycopy(points, 0, body, 0, points.length);
+		int width = -1;
+		int height = -1;
+		int[] skirt = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
+		for (TPoint tp : points) {
+		    int x = tp.x;
+		    int y = tp.y;
+		    if (x > width) {
+		        width = x;
+            }
+            if (y > height) {
+                height = y;
+            }
+            if (y < skirt[x]) {
+                skirt[x] = y;
+            }
+        }
+        this.width = width + 1;
+		this.height = height + 1;
+		this.skirt = new int[this.width];
+        System.arraycopy(skirt, 0, this.skirt, 0, this.width);
+        next = null;
 	}
 	
 
-	
-	
 	/**
 	 * Alternate constructor, takes a String with the x,y body points
 	 * all separated by spaces, such as "0 0  1 0  2 0	1 1".
@@ -88,7 +109,12 @@ public class Piece {
 	 */
 	public Piece computeNextRotation() {
 		// YOUR CODE HERE
-		return null; // YOUR CODE HERE
+        TPoint[] next = new TPoint[body.length];
+        for (int i = 0; i < body.length; i++) {
+            int x = this.height - body[i].y - 1;
+            next[i] = new TPoint(x, body[i].x);
+        }
+		return new Piece(next); // YOUR CODE HERE
 	}
 
 	/**
@@ -119,8 +145,17 @@ public class Piece {
 		// (null will be false)
 		if (!(obj instanceof Piece)) return false;
 		Piece other = (Piece)obj;
-		
+
 		// YOUR CODE HERE
+        Set<TPoint> thisPiece = new HashSet<>();
+        for (TPoint tp : this.body) {
+            thisPiece.add(tp);
+        }
+        for (TPoint tp : other.body) {
+            if (!thisPiece.contains(tp)) {
+                return false;
+            }
+        }
 		return true;
 	}
 
@@ -188,7 +223,14 @@ public class Piece {
 	*/
 	private static Piece makeFastRotations(Piece root) {
 		// YOUR CODE HERE
-		return null; // YOUR CODE HERE
+		Piece nextP = root;
+		nextP.next = nextP.computeNextRotation();
+		while (!nextP.next.equals(root)) {
+		    nextP = nextP.next;
+		    nextP.next = nextP.computeNextRotation();
+        }
+        nextP.next = root;
+		return root; // YOUR CODE HERE
 	}
 	
 	
@@ -218,7 +260,25 @@ public class Piece {
 		return array;
 	}
 
-	
-
+	@Override
+    public String toString(){
+	    StringBuilder sb = new StringBuilder();
+	    boolean[][] piece = new boolean[this.height][this.width];
+	    for (TPoint tp : this.body) {
+	        piece[tp.y][tp.x] = true;
+        }
+        for (int i = this.height - 1; i >= 0; i--) {
+            for (int j = 0; j < this.width; j++) {
+                if (piece[i][j]) {
+                    sb.append('@');
+                }
+                else {
+                    sb.append(' ');
+                }
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
 
 }
