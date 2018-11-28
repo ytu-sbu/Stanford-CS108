@@ -6,12 +6,14 @@ import java.io.File;
  * delete all, delete selected, delete unselected, clear operations.
  */
 public class DBTable {
-    private ArrayList<DBRecord> table;
+//    private ArrayList<DBRecord> table;
+    private ChunkList<DBRecord> table;
     private int recordNum;
     private int selectNum;
 
     public DBTable() {
-        table = new ArrayList<>();
+//        table = new ArrayList<>();
+        table = new ChunkList<>();
         recordNum = 0;
         selectNum = 0;
     }
@@ -84,12 +86,13 @@ public class DBTable {
      * @param criteria for search use
      */
     public void searchInAnd(String criteria) {
-        List<DBRecord.DBBinding> bindings = getCriteria(criteria).getBindings();
+//        List<DBBinding> bindings = getCriteria(criteria).getBindings();
+        ChunkList<DBBinding> bindings = getCriteria(criteria).getBindings();
         for (DBRecord r : table) {
             r.setSelected();
         }
         selectNum = recordNum;
-        for (DBRecord.DBBinding b : bindings) {
+        for (DBBinding b : bindings) {
             for (DBRecord r : table) {
                 // check this record only if it was selected in last check
                 if (r.isSelected()) {
@@ -119,8 +122,9 @@ public class DBTable {
      */
     public void searchInOr(String criteria) {
         clear();
-        List<DBRecord.DBBinding> bindings = getCriteria(criteria).getBindings();
-        for (DBRecord.DBBinding b : bindings) {
+//        List<DBBinding> bindings = getCriteria(criteria).getBindings();
+        ChunkList<DBBinding> bindings = getCriteria(criteria).getBindings();
+        for (DBBinding b : bindings) {
             for (DBRecord r : table) {
                 if (!r.isSelected() && r.isHit(b.getKey(), b.getValue())) {
                     r.setSelected();
@@ -134,7 +138,8 @@ public class DBTable {
      * delete all the records in the table
      */
     public void deleteAll() {
-        table = new ArrayList<>();
+//        table = new ArrayList<>();
+        table = new ChunkList<>();
         recordNum = 0;
     }
 
@@ -166,7 +171,8 @@ public class DBTable {
      * @param selMode
      */
     private void delete(boolean selMode) {
-        ArrayList<DBRecord> container = new ArrayList<>();
+//        ArrayList<DBRecord> container = new ArrayList<>();
+        ChunkList<DBRecord> container = new ChunkList<>();
         int newRecordNum = 0;
         for (DBRecord r : table) {
             if (retainIt(selMode, r)) {

@@ -5,73 +5,16 @@ import java.util.*;
  * Client could read the content or provide (part of) a sentence to see if it matches the DBRecord.
  */
 public class DBRecord {
-    /** defines the inner key-value data structure to represents the DBRecord
-     *
-     */
-    public class DBBinding {
-        private final String key;
-        private final String value;
-
-        /** build a key-value pair, use two String as inputs
-         * inputs could not be null
-         * @param key describe the what kind of value it is
-         * @param value is the content of the item
-         */
-        public DBBinding(String key, String value) {
-            if (key == null || key.length() == 0 || value == null || value.length() == 0) {
-                throw new java.lang.RuntimeException("any of the inputs should not be empty");
-            }
-            this.key = key;
-            this.value = value;
-        }
-
-        /**
-         * @return the key of this Binding
-         */
-        public String getKey() {
-            return this.key;
-        }
-
-        /**
-         * @return the value of this binding
-         */
-        public String getValue() {
-            return this.value;
-        }
-
-        /** checks if this DBBinding is the same kind of the one to be searched
-         * @param sKey the key be searched
-         * @return true if the search key matches the key
-         */
-        public boolean matchKey(String sKey) {
-            return key.equals(sKey);
-        }
-
-        /** checks if the value contains the searching value
-         * @param sValue
-         * @return true if the searching key matches the entire or part of the value
-         */
-        public boolean containsValue(String sValue) {
-            return value.toLowerCase().contains(sValue);
-        }
-
-        /** returns the characters representation of the key-value pair
-         * @return
-         */
-        @Override
-        public String toString() {
-            return (key + ':' + value);
-        }
-    }
-
-    private final ArrayList<DBBinding> Record;
+//    private final ArrayList<DBBinding> Record;
+    private final ChunkList<DBBinding> Record;
     private boolean selected = false;
 
     /** constructs a DBRecord form a sentence which contains multiple key-value pairs to describe the record
      * @param record the description input
      */
     public DBRecord(String record) {
-        Record = new ArrayList<>();
+//        Record = new ArrayList<>();
+        Record = new ChunkList<>();
         char[] txt = record.toCharArray();
         StringBuilder buffer = new StringBuilder();
         String key = null, value;
@@ -135,8 +78,17 @@ public class DBRecord {
         return false;
     }
 
+    /* old version
     public List<DBBinding> getBindings() {
         return (List<DBBinding>) Record.clone();
+    }
+    */
+    public ChunkList<DBBinding> getBindings() {
+        ChunkList<DBBinding> copy = new ChunkList<>();
+        for (DBBinding b : Record) {
+            copy.add(b);
+        }
+        return copy;
     }
 
     /** returns the character representation of the DBRecord
