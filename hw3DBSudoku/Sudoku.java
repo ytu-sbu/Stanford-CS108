@@ -46,11 +46,112 @@ public class Sudoku {
 	"6 0 0 0 2 1 0 4 0",
 	"0 0 0 5 3 0 9 0 0",
 	"0 3 0 0 0 0 0 5 1");
+
+	// the full set of integers a grid could contains
+	private static final List<Integer> fullSet = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9);
 	
 	
 	public static final int SIZE = 9;  // size of the whole 9x9 puzzle
 	public static final int PART = 3;  // size of each 3x3 part
 	public static final int MAX_SOLUTIONS = 100;
+	// the length of inner square
+	public static final int PARTSIZE = SIZE / PART;
+
+	private int[][] grids;
+	private long duration;
+	private Sudoku solution;
+	private int soluNum;
+
+    /**
+     * encapsulates all the information and methods of an empty grid in grids
+     */
+	private class Spot implements Comparable<Spot> {
+	    private final int row;
+	    private final int col;
+	    // the integers this grid could has
+	    private HashSet<Integer> valueSet;
+
+        /**
+         * Spot constructor, takes two arguments
+         * @param r row number
+         * @param c column number
+         */
+	    public Spot(int r, int c) {
+	        row = r;
+	        col = c;
+	        valueSet = new HashSet<>();
+        }
+
+        /**
+         *set the grid to the specified value
+         * @param v the specified value
+         */
+        public void setValue(int v) {
+	        grids[row][col] = v;
+        }
+
+        /**
+         * set the ValueSet to a collection of numbers which is valid on this grid
+         */
+        public void updateSelf() {
+//            valueSet = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
+            valueSet = new HashSet<>(fullSet);
+            // exclude from same row
+            for (int i = 0; i < SIZE; i++) {
+                valueSet.remove(grids[row][i]);
+            }
+            // exclude from same col
+            for (int i = 0; i < SIZE; i++) {
+                valueSet.remove(grids[i][col]);
+            }
+            // exclude from group
+            int deltai = row % PARTSIZE;
+            int deltaj = col % PARTSIZE;
+            int ibase = row - deltai;
+            int jbase = col - deltaj;
+            for (int i = 0; i < PARTSIZE; i++) {
+                if (i == deltai) {
+                    continue;
+                }
+                for (int j = 0; j < PARTSIZE; j++) {
+                    if (j == deltaj) {
+                        continue;
+                    }
+                    valueSet.remove(grids[ibase + i][jbase + j]);
+                }
+            }
+        }
+
+        /**
+         * @return the value stored in this grid
+         */
+        public int getValue() {
+	        return grids[row][col];
+        }
+
+        /**
+         * after this grid has been set to some value, updates the related grid
+         * @param relates the related grid
+         */
+        public void updateRelates(Spot relates) {
+	        // same row or same col element
+            if (relates.row == row || relates.col == col) {
+                relates.valueSet.remove(getValue());
+                return;
+            }
+
+            // part relative
+            if (relates.row / PARTSIZE == row / PARTSIZE && relates.col / PARTSIZE == col / PARTSIZE) {
+                relates.valueSet.remove(getValue());
+            }
+        }
+
+        @Override
+        public int compareTo(Spot other) {
+	        return this.valueSet.size() - other.valueSet.size();
+        }
+    }
+
 	
 	// Provided various static utility methods to
 	// convert data formats to int[][] grid.
@@ -133,31 +234,153 @@ public class Sudoku {
 		System.out.println(sudoku.getSolutionText());
 	}
 	
-	
-	
 
 	/**
 	 * Sets up based on the given ints.
 	 */
-	public Sudoku(int[][] ints) {
+//	public Sudoku(int[][] ints) {
+	public Sudoku(int[][] grid) {
 		// YOUR CODE HERE
+        grids = new int[SIZE][SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            System.arraycopy(grid[i], 0, grids[i], 0, SIZE);
+        }
+        duration = 0;
+        soluNum = 0;
 	}
-	
-	
+
 	
 	/**
 	 * Solves the puzzle, invoking the underlying recursive search.
+     * The original grid of the sudoku should not be changed by the solution
+     * @return the number of solutions and sets the state for getSolutionText() and getElapsed().
 	 */
 	public int solve() {
-		return 0; // YOUR CODE HERE
+	    long start = System.currentTimeMillis();
+        // start processing
+        ArrayList<Spot> blankSpots = readBlankAndSort();
+        solveHelper(0, blankSpots);
+        // finish processing
+        duration = System.currentTimeMillis() - start;
+		return soluNum; // YOUR CODE HERE
 	}
-	
+
+    /**
+     * read the int array, get all the blank grids, then sorting it based on the possible value numbers
+     * @return the sorted Spot ArrayList
+     */
+	private ArrayList<Spot> readBlankAndSort() {
+	    ArrayList<Spot> list = new ArrayList<>();
+	    Spot tmp;
+	    for (int i = 0; i < SIZE; i++) {
+	        for (int j = 0; j < SIZE; j++) {
+	            if (grids[i][j] == 0) {
+	                tmp = new Spot(i, j);
+	                tmp.updateSelf();
+	                list.add(tmp);
+                }
+            }
+        }
+        Collections.sort(list);
+	    return list;
+    }
+
+    /**
+     * recursion helper
+     * @param pos the index of current processing Spot
+     * @param list the sorted Spot List read from grids
+     */
+	private void solveHelper(int pos, List<Spot> list) {
+	    if (soluNum > MAX_SOLUTIONS) {
+	        return;
+        }
+        // found a solution
+        if (pos == list.size()) {
+            soluNum += 1;
+            if (solution == null) {
+                solution = new Sudoku(grids);
+            }
+            return;
+        }
+        Spot current = list.get(pos);
+        current.updateSelf();
+        for (int v : list.get(pos).valueSet) {
+            current.setValue(v);
+//            updateSpots(pos, list);
+            solveHelper(pos + 1, list);
+            current.setValue(0);
+//            restoreSpots(pos, list);
+        }
+	}
+
+    /**
+     * based on the new set value of current grid, updates all the related Spots
+     * @param pos the index of current processing Spot
+     * @param list the sorted Spot List read from grids
+     */
+	private void updateSpots(int pos, List<Spot> list) {
+	    Spot master = list.get(pos);
+	    for (int p = pos + 1; p < list.size(); p++) {
+            master.updateRelates(list.get(p));
+        }
+    }
+
+    /**
+     * after the current grid restored to 0, restores all the related Spots
+     * @param pos the index of current processing Spot
+     * @param list the sorted Spot List read from grids
+     */
+    private void restoreSpots(int pos, List<Spot> list) {
+	    for (int p = pos + 1; p < list.size(); p++) {
+	        list.get(p).updateSelf();
+        }
+    }
+
+    /**
+     * @return the first found solution, otherwise the empty string
+     */
 	public String getSolutionText() {
-		return ""; // YOUR CODE HERE
+		return solution.toString(); // YOUR CODE HERE
 	}
-	
+
+    /**
+     * after a solve
+     * @return the elapsed time spent in the solve measured in milliseconds.
+     */
 	public long getElapsed() {
-		return 0; // YOUR CODE HERE
+	    // System.currentTimeMillis()
+		return duration; // YOUR CODE HERE
 	}
+
+    /**
+     * @return a String made of 9 lines that shows the rows of the grid, with each number preceded by a space
+     */
+	@Override
+	public String toString() {
+	    StringBuilder buffer = new StringBuilder();
+        for (int k = 0; k < SIZE + PARTSIZE + 1; k++) {
+            buffer.append("- ");
+        }
+        buffer.append('\n');
+        for (int i = 0; i < SIZE; i++) {
+	        buffer.append('|');
+	        for (int j = 0; j < SIZE; j++) {
+	            buffer.append(' ');
+	            buffer.append(grids[i][j]);
+	            if (j % PARTSIZE == 2) {
+	                buffer.append(" |");
+                }
+            }
+            buffer.append('\n');
+	        if (i % PARTSIZE == 2) {
+	            for (int k = 0; k < SIZE + PARTSIZE + 1; k++) {
+                    buffer.append("- ");
+                }
+                buffer.append('\n');
+            }
+        }
+        buffer.deleteCharAt(buffer.length() - 1);
+        return buffer.toString();
+    }
 
 }
