@@ -10,9 +10,70 @@ import java.util.*;
 
 public class Bank {
 	public static final int ACCOUNTS = 20;	 // number of accounts
-	
+    public static final int DEFAULTBALANCE= 1000;	 // number of accounts
+	private Buffer buffer;
+	private ArrayList<Account> accounts;
+	private ArrayList<BadTransaction> badTrans = null;
+	private boolean limitMode = false;
+	private int limit = Integer.MIN_VALUE;
 
-	
+	private class Worker implements Runnable {
+	    @Override
+        public void run() {
+	        while (true) {
+	            Transaction trans = buffer.remove();
+	            if (trans == null) {
+	                break;
+                }
+                Account from = accounts.get(trans.from);
+	            from.withdraw(trans.amount);
+	            Account to = accounts.get(trans.to);
+	            to.deposit(trans.amount);
+				if (limitMode) {
+					int bal = from.getBalance();
+					if (bal <= limit) {
+						badTrans.add(new BadTransaction(from.getId(), to.getId(), trans.amount, bal));
+					}
+				}
+            }
+        }
+    }
+
+    private class BadTransaction extends Transaction {
+		private int balance;
+
+		public BadTransaction(int from, int to, int amount, int bal) {
+			super(from, to, amount);
+			this.balance = bal;
+		}
+
+		@Override
+		public String toString() {
+			return super.toString() + " bal:" + balance;
+		}
+	}
+
+	public Bank() {
+	    buffer = new Buffer();
+	    accounts = new ArrayList<>(ACCOUNTS);
+	    // initialize the accounts
+	    for (int i = 0; i < ACCOUNTS; i++) {
+	        accounts.add(i,new Account(this, i, DEFAULTBALANCE));
+        }
+    }
+
+    public static Bank createNormalBank() {
+		return new Bank();
+	}
+
+    public static Bank createLimitedBank(int limit) {
+		Bank bank = new Bank();
+		bank.badTrans = new ArrayList<>();
+		bank.limitMode = true;
+		bank.limit = limit;
+		return bank;
+	}
+
 	/*
 	 Reads transaction data (from/to/amt) from a file for processing.
 	 (provided code)
@@ -36,8 +97,8 @@ public class Bank {
 				int amount = (int)tokenizer.nval;
 				
 				// Use the from/to/amount
-				
 				// YOUR CODE HERE
+                buffer.add(new Transaction(from, to, amount));
 			}
 		}
 		catch (Exception e) {
@@ -46,6 +107,16 @@ public class Bank {
 		}
 	}
 
+    /**
+     * add a null to the buffer for every workers
+     * @param numWorkers the number of workers
+     */
+	private void addNulls(int numWorkers) {
+	    for (int i = 0; i < numWorkers; i++) {
+	        buffer.add(null);
+        }
+    }
+
 	/*
 	 Processes one file of transaction data
 	 -fork off workers
@@ -53,8 +124,34 @@ public class Bank {
 	 -wait for the workers to finish
 	*/
 	public void processFile(String file, int numWorkers) {
+	    // start numWorkers Worker Thread
+	    for (int i = 0; i < numWorkers; i++) {
+	        new Thread(new Worker()).start();
+        }
+        readFile(file);
+        addNulls(numWorkers);
+        try {
+            buffer.canAdd.acquire(Buffer.SIZE);
+        }
+        catch (InterruptedException ignored) { }
+        printAccounts();
+        if (limitMode) {
+        	printBadTrans();
+		}
 	}
 
+	private void printAccounts() {
+	    for (Account account : accounts) {
+	        System.out.println(account);
+        }
+    }
+
+    private void printBadTrans() {
+		System.out.println("Bad transactions...");
+		for (BadTransaction bt : badTrans) {
+			System.out.println(bt);
+		}
+	}
 	
 	
 	/*
@@ -75,6 +172,14 @@ public class Bank {
 		}
 		
 		// YOUR CODE HERE
+		Bank bank;
+		if (args.length >= 3) {
+			bank = Bank.createLimitedBank(Integer.parseInt(args[2]));
+		}
+		else {
+			bank = Bank.createNormalBank();
+		}
+        bank.processFile(file, numWorkers);
 	}
 }
 

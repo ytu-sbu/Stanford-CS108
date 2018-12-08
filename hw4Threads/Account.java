@@ -20,5 +20,34 @@ public class Account {
 		this.balance = balance;
 		transactions = 0;
 	}
-	
+
+	public synchronized int getBalance() {
+		return balance;
+	}
+
+	public synchronized int getId() {
+		return id;
+	}
+
+	private synchronized void change(boolean add, int amount) {
+	    if (add) {
+	    	balance += amount;
+		}
+		else {
+			balance -= amount;
+		}
+		transactions += 1;
+	}
+
+	public void deposit(int amount) {
+	    change(true, amount);
+    }
+
+    public void withdraw(int amount) {
+	    change(false, amount);
+    }
+
+    public String toString() {
+	    return "acct:" + id + " bal:" + balance + " trans:" + transactions;
+    }
 }
